@@ -29,6 +29,7 @@
 
   <script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
   <script src="//d3js.org/topojson.v1.min.js"></script>
+  <script src="//d3js.org/queue.v1.min.js"></script>
   <script type="text/javascript">
 
   var width = 1000,
@@ -45,16 +46,16 @@
   .attr("width", width)
   .attr("height", height);
 
-  var states = {};
+  var circles = svg.append("svg:g")
+  .attr("id", "circles");
 
-  d3.tsv("us-state-names.tsv", function(tsv){
+  function ready(error, network, us, tsv) {
+    if (error) throw error;
+    var states = {};
+
     tsv.forEach(function(d,i){
       states[d.id] = d;
     });
-  });
-
-  d3.json("us.json", function(error, us) {
-    if (error) throw error;
 
     svg.insert("path", ".graticule")
     .datum(topojson.feature(us, us.objects.land))
@@ -77,16 +78,35 @@
     });
 
     console.log(states);
-  });
 
-
-  d3.json("network.json", function (error, network) {
-    if (error) throw error;
-
-
-  });
+    circles.selectAll("circle")
+    .data(network.results)
+    .enter().append("svg:circle")
+    .filter(function (d, i) {
+      if (/\/us_.*$/.test(d.child_opencorporates_url)) {
+        var s = d.child_opencorporates_url.replace(/^.*\/us_/, '');
+        s = s.replace(/\/.*$/, '');
+        for (state in states) {
+          if (s === states[state].code.toLowerCase()) {
+            console.log(states[state]);
+            console.log(states[state].x, states[state].x);
+          }
+        }
+      }
+    })
+    .attr("cx", function(d, i) { return positions[i][0]; })
+    .attr("cy", function(d, i) { return positions[i][1]; })
+    .attr("r", function(d, i) { return Math.sqrt(countByAirport[d.iata]); })
+    .sort(function(a, b) { return countByAirport[b.iata] - countByAirport[a.iata]; });
+  }
 
   d3.select(self.frameElement).style("height", height + "px");
+
+  queue()
+  .defer(d3.json, 'network.json')
+  .defer(d3.json, 'us.json')
+  .defer(d3.tsv, 'us-state-names.tsv')
+  .await(ready);
 
   // d3.csv("flights-airport.csv", function(flights) {
   //   var linksByOrigin = {},
