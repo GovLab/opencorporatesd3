@@ -23,6 +23,17 @@
     stroke: #fff;
   }
 
+  circle {
+    fill: steelblue;
+    stroke: #ddf;
+    opacity: .8;
+  }
+
+  .arc {
+    stroke: #999;
+    opacity: .8;
+  }
+
 </style>
 </head>
 <body>
@@ -46,12 +57,10 @@
   .attr("width", width)
   .attr("height", height);
 
-  var circles = svg.append("svg:g")
-  .attr("id", "circles");
-
   function ready(error, network, us, tsv) {
     if (error) throw error;
     var states = {};
+    var counts = {};
 
     tsv.forEach(function(d,i){
       states[d.id] = d;
@@ -79,25 +88,100 @@
 
     console.log(states);
 
+    var circles = svg.append("g")
+    .attr("id", "circles");
+
+    circles.selectAll("path.arc")
+    .data(network.results)
+    .enter().append("line")
+    .filter(function (d, i) {
+      return /\/us_.*$/.test(d.child_opencorporates_url);
+    })
+    .attr("class", "arc")
+    .attr("x1", function (d) {
+      var s = d.child_opencorporates_url.replace(/^.*\/us_/, '');
+      s = s.replace(/\/.*$/, '');
+      for (state in states) {
+        if (s === states[state].code.toLowerCase()) {
+          return states[state].x;
+        }
+      }
+    })
+    .attr("y1", function (d) {
+      var s = d.child_opencorporates_url.replace(/^.*\/us_/, '');
+      s = s.replace(/\/.*$/, '');
+      for (state in states) {
+        if (s === states[state].code.toLowerCase()) {
+          return states[state].y;
+        }
+      }
+    })
+    .attr("x2", function (d) {
+      s = 'de';
+      for (state in states) {
+        if (s === states[state].code.toLowerCase()) {
+          return states[state].x;
+        }
+      }
+    })
+    .attr("y2", function (d) {
+      s = 'de';
+      for (state in states) {
+        if (s === states[state].code.toLowerCase()) {
+          return states[state].y;
+        }
+      }
+    });
+
     circles.selectAll("circle")
     .data(network.results)
     .enter().append("svg:circle")
     .filter(function (d, i) {
-      if (/\/us_.*$/.test(d.child_opencorporates_url)) {
-        var s = d.child_opencorporates_url.replace(/^.*\/us_/, '');
-        s = s.replace(/\/.*$/, '');
-        for (state in states) {
-          if (s === states[state].code.toLowerCase()) {
-            console.log(states[state]);
-            console.log(states[state].x, states[state].x);
-          }
+      return /\/us_.*$/.test(d.child_opencorporates_url);
+    })
+    .each(function(d, i) {
+      var s = d.child_opencorporates_url.replace(/^.*\/us_/, '');
+      s = s.replace(/\/.*$/, '');
+      for (state in states) {
+        if (s === states[state].code.toLowerCase()) {
+          s in counts ? counts[s]++ : counts[s] = 1;
         }
       }
     })
-    .attr("cx", function(d, i) { return positions[i][0]; })
-    .attr("cy", function(d, i) { return positions[i][1]; })
-    .attr("r", function(d, i) { return Math.sqrt(countByAirport[d.iata]); })
-    .sort(function(a, b) { return countByAirport[b.iata] - countByAirport[a.iata]; });
+    .attr("cx", function(d, i) {
+      var s = d.child_opencorporates_url.replace(/^.*\/us_/, '');
+      s = s.replace(/\/.*$/, '');
+      for (state in states) {
+        if (s === states[state].code.toLowerCase()) {
+          return states[state].x;
+        }
+      }
+    })
+    .attr("cy", function(d, i) {
+      var s = d.child_opencorporates_url.replace(/^.*\/us_/, '');
+      s = s.replace(/\/.*$/, '');
+      for (state in states) {
+        if (s === states[state].code.toLowerCase()) {
+          return states[state].y;
+        }
+      }
+    })
+    .attr("r", function(d, i) {
+      var s = d.child_opencorporates_url.replace(/^.*\/us_/, '');
+      s = s.replace(/\/.*$/, '');
+      // return counts[s] * 1;
+      var c = [], sum = 0;
+      for (var i in counts) {
+        c.push(counts[i]);
+        sum += counts[i];
+      }
+      var avg = sum/c.length;
+      var max = Math.max.apply(null, c);
+      var r = (Math.log((counts[s] + 1))/Math.log(2)) * 4 + 2;
+      console.log(r);
+      return r;
+    });
+
   }
 
   d3.select(self.frameElement).style("height", height + "px");
