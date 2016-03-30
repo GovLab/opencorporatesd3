@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet' type='text/css'>
   <style type="text/css">
   svg {
     display: block;
@@ -34,10 +35,16 @@
     opacity: .8;
   }
 
+  h1 {
+    font-family: 'Raleway', sans-serif;
+    color: #999;
+  }
+
 </style>
 </head>
 <body>
-
+  <h1>US subsidiaries of CATERPILLAR INC. (us_de/2085588, depth: 1)</h1>
+  <div class="map"></div>
   <script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
   <script src="//d3js.org/topojson.v1.min.js"></script>
   <script src="//d3js.org/queue.v1.min.js"></script>
@@ -53,7 +60,7 @@
   var path = d3.geo.path()
   .projection(projection);
 
-  var svg = d3.select("body").append("svg")
+  var svg = d3.select(".map").append("svg")
   .attr("width", width)
   .attr("height", height);
 
